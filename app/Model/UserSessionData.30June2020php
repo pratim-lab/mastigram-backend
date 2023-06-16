@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Model;
+
+use Illuminate\Database\Eloquent\Model;
+
+class UserSessionData extends Model
+{
+    protected $table = 'user_session_datas';
+
+    protected $guarded = [];
+	
+	
+	public function getData($userId, $key = null){
+		$sessionData = UserSessionData::where('user_id', $userId)->first();
+		
+		if(!$sessionData){
+			return ($key != null) ? '' : [];
+		}
+		
+		$data = (array) json_decode($sessionData->data);
+		if($key != null){
+			return (isset($data[$key])) ? $data[$key] : '';
+		}else{
+			return $data;
+		}
+		
+	}
+	
+	public function setData($userId, array $arr){
+		$sessionData = UserSessionData::where('user_id', $userId)->first();
+		if($sessionData){
+			$data = (array) json_decode($sessionData->data);
+			$data = array_merge($data, $arr);
+			$sessionData->data = json_encode($data);
+			$sessionData->save();
+		}else{
+			$insertArr = array(
+				'user_id' => $userId,
+				'data' => json_encode($arr)
+			);
+			$sessionData = UserSessionData::create($insertArr);
+		}
+		
+		return $sessionData;
+		
+	}
+	
+	public function removeData($userId, $key = null){
+		$sessionData = UserSessionData::where('user_id', $userId)->first();
+		if(!$sessionData) return true;
+		
+		$data = (array) json_decode($sessionData->data);
+		if($key == null){
+			$sessionData->delete();
+		}else if(isset($data[$key])){
+			unset($data[$key]);
+			$sessionData->data = json_encode($data);
+			$sessionData->save();
+		}
+		
+		return true;
+	}
+
+}
